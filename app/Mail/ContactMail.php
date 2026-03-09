@@ -1,0 +1,41 @@
+<?php
+
+namespace App\Mail;
+
+use Illuminate\Bus\Queueable;
+use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Content;
+use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Queue\SerializesModels;
+
+class ContactMail extends Mailable
+{
+    use Queueable, SerializesModels;
+
+    public function __construct(public array $data) {}
+
+    public function envelope(): Envelope
+    {
+        return new Envelope(
+            subject: 'New Portfolio Message from ' . $this->data['name'],
+            replyTo: [$this->data['email']],
+        );
+    }
+
+    public function content(): Content
+{
+    return new Content(
+        view: 'emails.contact',
+        with: [
+            'name'  => $this->data['name'],
+            'email' => $this->data['email'],
+            'body'  => $this->data['message'],  
+        ],
+    );
+}
+
+    public function attachments(): array
+    {
+        return [];
+    }
+}

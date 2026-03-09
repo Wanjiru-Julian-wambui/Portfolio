@@ -26,7 +26,7 @@ class SkillController extends Controller
     {
         $request->validate([
             'name'  => 'required|string|max:255',
-            'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg,webp|max:10240',
         ]);
 
         $imagePath = $request->file('image')->store('skills', 'public');
@@ -39,20 +39,18 @@ class SkillController extends Controller
         return redirect()->route('skills.index')->with('success', 'Skill created successfully.');
     }
 
-    public function show(string $id)
+    public function show(Skill $skill)
     {
         //
     }
 
-    public function edit(string $id)
+    public function edit(Skill $skill)
     {
         //
     }
 
-    public function update(Request $request, string $id)
+    public function update(Request $request, Skill $skill)
     {
-        $skill = Skill::findOrFail($id);
-
         $request->validate([
             'name'  => 'required|string|max:255',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
@@ -70,10 +68,8 @@ class SkillController extends Controller
         return redirect()->route('skills.index')->with('success', 'Skill updated successfully.');
     }
 
-    public function destroy(string $id)
+    public function destroy(Skill $skill)
     {
-        $skill = Skill::findOrFail($id);
-
         Storage::disk('public')->delete($skill->image);
 
         $skill->delete();

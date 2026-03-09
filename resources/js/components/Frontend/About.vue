@@ -164,6 +164,16 @@ const builds = [
                 </div>
             </div>
 
+            <!-- Contact Me -->
+            <div class="contact-wrap fade-up" style="--d: 1100ms">
+                <a href="#contact" class="contact-btn">
+                    <span>Contact Me</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 8.25 21 12m0 0-3.75 3.75M21 12H3" />
+                    </svg>
+                </a>
+            </div>
+
         </div>
     </section>
 </template>
@@ -596,4 +606,60 @@ const builds = [
     transition: width 0.45s ease;
 }
 .bento-card:hover .bento-line { width: 100%; }
+
+/* ── Contact button ── */
+.contact-wrap {
+    display: flex;
+    justify-content: center;
+    margin-top: 3rem;
+}
+
+.contact-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.85rem 2.25rem;
+    border-radius: 9999px;
+    background: linear-gradient(135deg, #0ea5e9, #6366f1);
+    color: #ffffff;
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-decoration: none;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    box-shadow: 0 4px 20px rgba(14, 165, 233, 0.35),
+                0 1px 0 rgba(255,255,255,0.2) inset;
+}
+
+.contact-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, #6366f1, #ec4899);
+    opacity: 0;
+    transition: opacity 0.35s ease;
+}
+
+.contact-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 35px rgba(14, 165, 233, 0.45),
+                0 1px 0 rgba(255,255,255,0.2) inset;
+}
+
+.contact-btn:hover::before { opacity: 1; }
+
+.contact-btn span,
+.contact-btn svg {
+    position: relative;
+    z-index: 1;
+}
+
+.contact-btn svg {
+    width: 1.1rem; height: 1.1rem;
+    transition: transform 0.25s ease;
+}
+
+.contact-btn:hover svg { transform: translateX(5px); }
 </style>

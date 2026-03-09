@@ -7,14 +7,14 @@ use Illuminate\Database\Eloquent\Model;
 class Project extends Model
 {
     protected $fillable = [
-        'skill_id',
         'name',
+        'description',
         'image',
         'project_url',
     ];
 
-    public function skill()
+    public function skills()
     {
-        return $this->belongsTo(Skill::class);
+        return $this->belongsToMany(Skill::class);
     }
 }

@@ -1,25 +1,23 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Laravel\Fortify\Features;
 use Inertia\Inertia;
 use App\Http\Controllers\SkillController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\ContactController;
+use App\Http\Controllers\WelcomeController;
 
-Route::inertia('/', 'Welcome', [
-    'canLogin' => Route::has('login'),
-    'canRegister' => Route::has('register') && Features::enabled(Features::registration()),
-    'laravelVersion' => app()->version(),
-    'phpVersion' => PHP_VERSION,
-])->name('home');
+Route::get('/', [WelcomeController::class, 'welcome'])->name('welcome');
+
+Route::post('/contact', [ContactController::class, 'send'])->name('contact.send');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', function () {
         return Inertia::render('Dashboard');
     })->name('dashboard');
 
-    Route::resource('/skills', SkillController::class);
-    Route::resource('/projects', ProjectController::class);
+    Route::resource('skills', SkillController::class);
+    Route::resource('projects', ProjectController::class);
 });
 
 require __DIR__.'/settings.php';

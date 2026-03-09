@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { Head, router, useForm } from '@inertiajs/vue3';
+import { ref } from 'vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { index as projectsIndex } from '@/routes/projects';
 import type { BreadcrumbItem } from '@/types';
-import { ref } from 'vue';
 
 interface Skill {
     id: number;
@@ -14,10 +14,11 @@ interface Skill {
 interface Project {
     id: number;
     name: string;
+    description: string | null;
     image: string;
     project_url: string | null;
-    skill_id: number;
-    skill: Skill;
+    skill_ids: number[];
+    skills: Skill[];
 }
 
 defineProps<{
@@ -26,29 +27,19 @@ defineProps<{
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Projects',
-        href: projectsIndex().url,
-    },
+    { title: 'Projects', href: projectsIndex().url },
 ];
 
 // ── Delete ────────────────────────────────────────────────
 const projectToDelete = ref<Project | null>(null);
 
-const confirmDelete = (project: Project) => {
-    projectToDelete.value = project;
-};
-
-const cancelDelete = () => {
-    projectToDelete.value = null;
-};
+const confirmDelete = (project: Project) => { projectToDelete.value = project; };
+const cancelDelete = () => { projectToDelete.value = null; };
 
 const deleteProject = () => {
     if (!projectToDelete.value) return;
     router.delete(`/projects/${projectToDelete.value.id}`, {
-        onFinish: () => {
-            projectToDelete.value = null;
-        },
+        onFinish: () => { projectToDelete.value = null; },
     });
 };
 
@@ -57,8 +48,9 @@ const projectToEdit = ref<Project | null>(null);
 
 const editForm = useForm({
     name: '',
-    skill_id: '',
+    skill_ids: [] as number[],
     project_url: '',
+    description: '',
     image: null as File | null,
     _method: 'PUT',
 });
@@ -66,7 +58,8 @@ const editForm = useForm({
 const openEdit = (project: Project) => {
     projectToEdit.value = project;
     editForm.name        = project.name;
-    editForm.skill_id    = String(project.skill_id);
+    editForm.description = project.description ?? '';
+    editForm.skill_ids   = [...(project.skill_ids ?? [])];
     editForm.project_url = project.project_url ?? '';
     editForm.image       = null;
 };
@@ -78,18 +71,22 @@ const cancelEdit = () => {
 
 const handleEditImage = (e: Event) => {
     const target = e.target as HTMLInputElement;
-    if (target.files?.[0]) {
-        editForm.image = target.files[0];
-    }
+    if (target.files?.[0]) editForm.image = target.files[0];
 };
+
+const toggleEditSkill = (id: number) => {
+    const idx = editForm.skill_ids.indexOf(id);
+    if (idx === -1) editForm.skill_ids.push(id);
+    else editForm.skill_ids.splice(idx, 1);
+};
+
+const isEditSkillSelected = (id: number) => editForm.skill_ids.includes(id);
 
 const submitEdit = () => {
     if (!projectToEdit.value) return;
     editForm.post(`/projects/${projectToEdit.value.id}`, {
         forceFormData: true,
-        onSuccess: () => {
-            projectToEdit.value = null;
-        },
+        onSuccess: () => { projectToEdit.value = null; },
     });
 };
 </script>
@@ -106,14 +103,14 @@ const submitEdit = () => {
                     <h1 class="text-xl font-medium tracking-tight text-foreground">Projects</h1>
                     <p class="mt-0.5 text-sm text-muted-foreground">Manage your projects.</p>
                 </div>
-                <Link
+                <a
                     href="/projects/create"
                     class="inline-flex h-9 items-center gap-1.5 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
                 >
                     <span class="text-base leading-none">+</span>
                     <span class="hidden sm:inline">New project</span>
                     <span class="sm:hidden">New</span>
-                </Link>
+                </a>
             </div>
 
             <!-- Divider -->
@@ -131,10 +128,8 @@ const submitEdit = () => {
                     :key="project.id"
                     class="flex items-center gap-3 px-3 py-3 sm:gap-4 sm:px-4 hover:bg-accent/40 transition-colors"
                 >
-                    <!-- Row number -->
                     <span class="w-4 shrink-0 text-xs text-muted-foreground text-right">{{ index + 1 }}</span>
 
-                    <!-- Project image -->
                     <div class="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-md border border-border bg-background p-1.5 overflow-hidden">
                         <img
                             :src="project.image"
@@ -147,23 +142,20 @@ const submitEdit = () => {
                         />
                     </div>
 
-                    <!-- Name & skill -->
                     <div class="flex flex-1 flex-col gap-0.5 min-w-0">
                         <span class="text-sm font-medium text-foreground truncate">{{ project.name }}</span>
-                        <div class="flex items-center gap-1.5">
-                            <img
-                                :src="project.skill.image"
-                                :alt="project.skill.name"
-                                class="h-3.5 w-3.5 object-contain shrink-0"
-                            />
-                            <span class="text-xs text-muted-foreground truncate">{{ project.skill.name }}</span>
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <template v-for="(skill, i) in project.skills" :key="skill.id">
+                                <div class="flex items-center gap-1">
+                                    <img :src="skill.image" :alt="skill.name" class="h-3.5 w-3.5 object-contain shrink-0" />
+                                    <span class="text-xs text-muted-foreground">{{ skill.name }}</span>
+                                </div>
+                                <span v-if="i < project.skills.length - 1" class="text-xs text-muted-foreground/40">·</span>
+                            </template>
                         </div>
                     </div>
 
-                    <!-- Actions -->
                     <div class="flex items-center gap-1.5 shrink-0">
-
-                        <!-- Visit -->
                         <a
                             v-if="project.project_url"
                             :href="project.project_url"
@@ -179,7 +171,6 @@ const submitEdit = () => {
                             <span class="hidden sm:inline">Visit</span>
                         </a>
 
-                        <!-- Edit -->
                         <button
                             @click="openEdit(project)"
                             class="inline-flex h-8 w-8 sm:w-auto sm:px-3 sm:gap-1.5 items-center justify-center rounded-md border border-border text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
@@ -191,7 +182,6 @@ const submitEdit = () => {
                             <span class="hidden sm:inline">Edit</span>
                         </button>
 
-                        <!-- Delete -->
                         <button
                             @click="confirmDelete(project)"
                             class="inline-flex h-8 w-8 sm:w-auto sm:px-3 sm:gap-1.5 items-center justify-center rounded-md border border-border text-xs font-medium text-muted-foreground transition-colors hover:border-destructive hover:bg-destructive/10 hover:text-destructive"
@@ -199,115 +189,89 @@ const submitEdit = () => {
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <polyline points="3 6 5 6 21 6" />
                                 <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                                <path d="M10 11v6" />
-                                <path d="M14 11v6" />
+                                <path d="M10 11v6" /><path d="M14 11v6" />
                                 <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
                             </svg>
                             <span class="hidden sm:inline">Delete</span>
                         </button>
-
                     </div>
                 </div>
             </div>
-
         </div>
 
         <!-- ── Edit Dialog ─────────────────────────────────────── -->
         <Teleport to="body">
-            <div
-                v-if="projectToEdit"
-                class="fixed inset-0 z-50 flex items-center justify-center p-4"
-            >
+            <div v-if="projectToEdit" class="fixed inset-0 z-50 flex items-center justify-center p-4">
                 <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="cancelEdit" />
-
                 <div class="relative z-10 w-full max-w-sm rounded-xl border border-border bg-card p-6 shadow-xl">
                     <h2 class="text-base font-semibold text-foreground">Edit project</h2>
                     <p class="mt-1 text-sm text-muted-foreground">Update the details for <span class="font-medium text-foreground">{{ projectToEdit.name }}</span>.</p>
 
                     <form @submit.prevent="submitEdit" class="mt-5 flex flex-col gap-4">
 
-                        <!-- Name -->
                         <div class="flex flex-col gap-1.5">
                             <label for="edit-name" class="text-sm font-medium text-foreground">Name</label>
-                            <input
-                                id="edit-name"
-                                v-model="editForm.name"
-                                type="text"
-                                required
-                                autocomplete="off"
-                                placeholder="e.g. Portfolio Website"
-                                class="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
-                            />
+                            <input id="edit-name" v-model="editForm.name" type="text" required autocomplete="off" placeholder="e.g. Portfolio Website"
+                                class="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-sm focus:outline-none focus:ring-1 focus:ring-ring" />
                             <span v-if="editForm.errors.name" class="text-xs text-destructive">{{ editForm.errors.name }}</span>
                         </div>
 
-                        <!-- Skill -->
+                        <!-- Skills multi-select -->
                         <div class="flex flex-col gap-1.5">
-                            <label for="edit-skill" class="text-sm font-medium text-foreground">Skill</label>
-                            <select
-                                id="edit-skill"
-                                v-model="editForm.skill_id"
-                                required
-                                class="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
-                            >
-                                <option value="" disabled>Select a skill</option>
-                                <option v-for="skill in skills" :key="skill.id" :value="String(skill.id)">
+                            <label class="text-sm font-medium text-foreground">
+                                Skills <span class="ml-1 text-xs font-normal text-muted-foreground">(select one or more)</span>
+                            </label>
+                            <div class="flex flex-wrap gap-2">
+                                <button
+                                    v-for="skill in skills"
+                                    :key="skill.id"
+                                    type="button"
+                                    @click="toggleEditSkill(skill.id)"
+                                    :class="[
+                                        'inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all',
+                                        isEditSkillSelected(skill.id)
+                                            ? 'border-primary bg-primary/10 text-primary'
+                                            : 'border-border bg-background text-muted-foreground hover:border-primary/50 hover:text-foreground'
+                                    ]"
+                                >
+                                    <img :src="skill.image" :alt="skill.name" class="h-3.5 w-3.5 object-contain" />
                                     {{ skill.name }}
-                                </option>
-                            </select>
-                            <span v-if="editForm.errors.skill_id" class="text-xs text-destructive">{{ editForm.errors.skill_id }}</span>
+                                    <svg v-if="isEditSkillSelected(skill.id)" xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="20 6 9 17 4 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <p class="text-xs text-muted-foreground">
+                                {{ editForm.skill_ids.length === 0 ? 'No skills selected' : `${editForm.skill_ids.length} skill${editForm.skill_ids.length > 1 ? 's' : ''} selected` }}
+                            </p>
+                            <span v-if="editForm.errors.skill_ids" class="text-xs text-destructive">{{ editForm.errors.skill_ids }}</span>
                         </div>
 
-                        <!-- Image -->
                         <div class="flex flex-col gap-1.5">
-                            <label for="edit-image" class="text-sm font-medium text-foreground">Image <span class="text-xs font-normal text-muted-foreground">(leave blank to keep current)</span></label>
+                            <label for="edit-image" class="text-sm font-medium text-foreground">
+                                Image <span class="text-xs font-normal text-muted-foreground">(leave blank to keep current)</span>
+                            </label>
                             <div class="flex items-center gap-3 rounded-md border border-border bg-background p-2">
-                                <img
-                                    :src="projectToEdit.image"
-                                    :alt="projectToEdit.name"
-                                    class="h-8 w-8 rounded object-cover shrink-0"
-                                />
-                                <input
-                                    id="edit-image"
-                                    type="file"
-                                    accept="image/*"
-                                    @change="handleEditImage"
-                                    class="text-xs text-foreground file:mr-2 file:text-xs file:font-medium cursor-pointer"
-                                />
+                                <img :src="projectToEdit.image" :alt="projectToEdit.name" class="h-8 w-8 rounded object-cover shrink-0" />
+                                <input id="edit-image" type="file" accept="image/*" @change="handleEditImage" class="text-xs text-foreground file:mr-2 file:text-xs file:font-medium cursor-pointer" />
                             </div>
                             <span v-if="editForm.errors.image" class="text-xs text-destructive">{{ editForm.errors.image }}</span>
                         </div>
 
-                        <!-- Project URL -->
                         <div class="flex flex-col gap-1.5">
                             <label for="edit-url" class="text-sm font-medium text-foreground">Project URL</label>
-                            <input
-                                id="edit-url"
-                                v-model="editForm.project_url"
-                                type="url"
-                                required
-                                autocomplete="off"
-                                placeholder="https://example.com"
-                                class="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
-                            />
+                            <input id="edit-url" v-model="editForm.project_url" type="url" required autocomplete="off" placeholder="https://example.com"
+                                class="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-sm focus:outline-none focus:ring-1 focus:ring-ring" />
                             <span v-if="editForm.errors.project_url" class="text-xs text-destructive">{{ editForm.errors.project_url }}</span>
                         </div>
 
                         <div class="h-px bg-border" />
 
                         <div class="flex items-center justify-end gap-2">
-                            <button
-                                type="button"
-                                @click="cancelEdit"
-                                class="inline-flex h-9 items-center rounded-md border border-border px-4 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                            >
+                            <button type="button" @click="cancelEdit" class="inline-flex h-9 items-center rounded-md border border-border px-4 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
                                 Cancel
                             </button>
-                            <button
-                                type="submit"
-                                :disabled="editForm.processing"
-                                class="inline-flex h-9 items-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
-                            >
+                            <button type="submit" :disabled="editForm.processing || editForm.skill_ids.length === 0" class="inline-flex h-9 items-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50">
                                 {{ editForm.processing ? 'Saving…' : 'Save changes' }}
                             </button>
                         </div>
@@ -319,31 +283,18 @@ const submitEdit = () => {
 
         <!-- ── Delete Dialog ───────────────────────────────────── -->
         <Teleport to="body">
-            <div
-                v-if="projectToDelete"
-                class="fixed inset-0 z-50 flex items-center justify-center p-4"
-            >
+            <div v-if="projectToDelete" class="fixed inset-0 z-50 flex items-center justify-center p-4">
                 <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="cancelDelete" />
-
                 <div class="relative z-10 w-full max-w-sm rounded-xl border border-border bg-card p-6 shadow-xl">
                     <h2 class="text-base font-semibold text-foreground">Delete project</h2>
                     <p class="mt-2 text-sm text-muted-foreground">
-                        Are you sure you want to delete
-                        <span class="font-medium text-foreground">{{ projectToDelete.name }}</span>?
-                        This action cannot be undone.
+                        Are you sure you want to delete <span class="font-medium text-foreground">{{ projectToDelete.name }}</span>? This action cannot be undone.
                     </p>
-
                     <div class="mt-6 flex items-center justify-end gap-2">
-                        <button
-                            @click="cancelDelete"
-                            class="inline-flex h-9 items-center rounded-md border border-border px-4 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                        >
+                        <button @click="cancelDelete" class="inline-flex h-9 items-center rounded-md border border-border px-4 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
                             Cancel
                         </button>
-                        <button
-                            @click="deleteProject"
-                            class="inline-flex h-9 items-center rounded-md bg-destructive px-4 text-sm font-medium text-destructive-foreground transition-opacity hover:opacity-90"
-                        >
+                        <button @click="deleteProject" class="inline-flex h-9 items-center rounded-md bg-destructive px-4 text-sm font-medium text-destructive-foreground transition-opacity hover:opacity-90">
                             Delete
                         </button>
                     </div>

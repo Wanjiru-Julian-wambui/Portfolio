@@ -15,7 +15,7 @@ class ProjectController extends Controller
     public function index()
     {
         return Inertia::render('projects/Index', [
-            'projects' => ProjectResource::collection(Project::with('skill')->latest()->get())->resolve(),
+            'projects' => ProjectResource::collection(Project::with('skills')->latest()->get())->resolve(),
             'skills'   => SkillResource::collection(Skill::latest()->get())->resolve(),
         ]);
     }
@@ -31,47 +31,51 @@ class ProjectController extends Controller
     {
         $request->validate([
             'name'        => 'required|string|max:255',
-            'skill_id'    => 'required|exists:skills,id',
+            'skill_ids'   => 'required|array|min:1',
+            'skill_ids.*' => 'exists:skills,id',
             'image'       => 'required|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
             'project_url' => 'required|url|max:255',
+            'description' => 'nullable|string|max:1000',
         ]);
 
         $imagePath = $request->file('image')->store('projects', 'public');
 
-        Project::create([
+        $project = Project::create([
             'name'        => $request->name,
-            'skill_id'    => $request->skill_id,
             'image'       => $imagePath,
             'project_url' => $request->project_url,
+            'description' => $request->description,
         ]);
+
+        $project->skills()->sync($request->skill_ids);
 
         return redirect()->route('projects.index')->with('success', 'Project created successfully.');
     }
 
-    public function show(string $id)
+    public function show(Project $project)
     {
         //
     }
 
-    public function edit(string $id)
+    public function edit(Project $project)
     {
         //
     }
 
-    public function update(Request $request, string $id)
+    public function update(Request $request, Project $project)
     {
-        $project = Project::findOrFail($id);
-
         $request->validate([
             'name'        => 'required|string|max:255',
-            'skill_id'    => 'required|exists:skills,id',
-            'image'       => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
+            'skill_ids'   => 'required|array|min:1',
+            'skill_ids.*' => 'exists:skills,id',
+            'image'       => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:10240',
             'project_url' => 'required|url|max:255',
+            'description' => 'nullable|string|max:1000',
         ]);
 
         $project->name        = $request->name;
-        $project->skill_id    = $request->skill_id;
         $project->project_url = $request->project_url;
+        $project->description = $request->description;
 
         if ($request->hasFile('image')) {
             Storage::disk('public')->delete($project->image);
@@ -80,13 +84,13 @@ class ProjectController extends Controller
 
         $project->save();
 
+        $project->skills()->sync($request->skill_ids);
+
         return redirect()->route('projects.index')->with('success', 'Project updated successfully.');
     }
 
-    public function destroy(string $id)
+    public function destroy(Project $project)
     {
-        $project = Project::findOrFail($id);
-
         Storage::disk('public')->delete($project->image);
 
         $project->delete();

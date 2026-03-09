@@ -1,22 +1,16 @@
 <script setup lang="ts">
-import { Head, Link, useForm } from '@inertiajs/vue3';
-import AppLayout from '@/layouts/AppLayout.vue';
-import { index as skillsIndex } from '@/routes/skills';
-import type { BreadcrumbItem } from '@/types';
+import { Head, useForm } from '@inertiajs/vue3';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import AppLayout from '@/layouts/AppLayout.vue';
+import { index as skillsIndex, store as skillsStore } from '@/routes/skills';
+import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Skills',
-        href: skillsIndex().url,
-    },
-    {
-        title: 'Create Skill',
-        href: '/skills/create',
-    },
+    { title: 'Skills', href: skillsIndex().url },
+    { title: 'Create Skill', href: '/skills/create' },
 ];
 
 const form = useForm({
@@ -26,14 +20,15 @@ const form = useForm({
 
 const handleImageChange = (e: Event) => {
     const target = e.target as HTMLInputElement;
-    if (target.files?.[0]) {
-        form.image = target.files[0];
-    }
+    if (target.files?.[0]) form.image = target.files[0];
 };
 
 const submit = () => {
-    form.post('/skills', {
+    form.post(skillsStore().url, {
         forceFormData: true,
+        onSuccess: () => {
+            window.location.href = skillsIndex().url;
+        },
     });
 };
 </script>
@@ -45,16 +40,13 @@ const submit = () => {
         <div class="flex min-h-full flex-1 items-start justify-center px-4 py-12">
             <div class="w-full max-w-sm">
 
-                <!-- Header -->
                 <div class="mb-8">
                     <h1 class="text-xl font-medium tracking-tight text-foreground">New skill</h1>
                     <p class="mt-1 text-sm text-muted-foreground">Add a skill to your collection.</p>
                 </div>
 
-                <!-- Form -->
                 <form @submit.prevent="submit" class="flex flex-col gap-5">
 
-                    <!-- Name -->
                     <div class="flex flex-col gap-1.5">
                         <Label for="name" class="text-sm font-medium text-foreground">Name</Label>
                         <Input
@@ -70,23 +62,21 @@ const submit = () => {
                         <InputError :message="form.errors.name" class="text-xs" />
                     </div>
 
-                    <!-- Image -->
                     <div class="flex flex-col gap-1.5">
                         <Label for="image" class="text-sm font-medium text-foreground">Image</Label>
                         <Input
                             id="image"
                             type="file"
                             accept="image/*"
+                            required
                             @change="handleImageChange"
                             class="h-9 text-sm file:text-xs file:font-medium cursor-pointer text-foreground"
                         />
                         <InputError :message="form.errors.image" class="text-xs" />
                     </div>
 
-                    <!-- Divider -->
                     <div class="h-px bg-border" />
 
-                    <!-- Actions -->
                     <div class="flex items-center gap-2">
                         <Button
                             type="submit"
@@ -95,12 +85,12 @@ const submit = () => {
                         >
                             {{ form.processing ? 'Creating…' : 'Create skill' }}
                         </Button>
-                        <Link
+                        <a
                             :href="skillsIndex().url"
                             class="inline-flex h-9 items-center rounded-md border border-border px-4 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                         >
                             Cancel
-                        </Link>
+                        </a>
                     </div>
 
                 </form>
