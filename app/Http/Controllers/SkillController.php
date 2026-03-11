@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Http\Resources\SkillResource;
 use App\Models\Skill;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class SkillController extends Controller
@@ -29,7 +28,7 @@ class SkillController extends Controller
             'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg,webp|max:10240',
         ]);
 
-        $imagePath = $request->file('image')->store('skills', 'public');
+        $imagePath = cloudinary()->upload($request->file('image')->getRealPath())->getSecurePath();
 
         Skill::create([
             'name'  => $request->name,
@@ -37,16 +36,6 @@ class SkillController extends Controller
         ]);
 
         return redirect()->route('skills.index')->with('success', 'Skill created successfully.');
-    }
-
-    public function show(Skill $skill)
-    {
-        //
-    }
-
-    public function edit(Skill $skill)
-    {
-        //
     }
 
     public function update(Request $request, Skill $skill)
@@ -59,8 +48,7 @@ class SkillController extends Controller
         $skill->name = $request->name;
 
         if ($request->hasFile('image')) {
-            Storage::disk('public')->delete($skill->image);
-            $skill->image = $request->file('image')->store('skills', 'public');
+            $skill->image = cloudinary()->upload($request->file('image')->getRealPath())->getSecurePath();
         }
 
         $skill->save();
@@ -70,10 +58,7 @@ class SkillController extends Controller
 
     public function destroy(Skill $skill)
     {
-        Storage::disk('public')->delete($skill->image);
-
         $skill->delete();
-
         return redirect()->route('skills.index')->with('success', 'Skill deleted successfully.');
     }
 }

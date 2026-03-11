@@ -7,7 +7,6 @@ use App\Http\Resources\SkillResource;
 use App\Models\Project;
 use App\Models\Skill;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class ProjectController extends Controller
@@ -38,7 +37,7 @@ class ProjectController extends Controller
             'description' => 'nullable|string|max:1000',
         ]);
 
-        $imagePath = $request->file('image')->store('projects', 'public');
+        $imagePath = cloudinary()->upload($request->file('image')->getRealPath())->getSecurePath();
 
         $project = Project::create([
             'name'        => $request->name,
@@ -50,16 +49,6 @@ class ProjectController extends Controller
         $project->skills()->sync($request->skill_ids);
 
         return redirect()->route('projects.index')->with('success', 'Project created successfully.');
-    }
-
-    public function show(Project $project)
-    {
-        //
-    }
-
-    public function edit(Project $project)
-    {
-        //
     }
 
     public function update(Request $request, Project $project)
@@ -78,12 +67,10 @@ class ProjectController extends Controller
         $project->description = $request->description;
 
         if ($request->hasFile('image')) {
-            Storage::disk('public')->delete($project->image);
-            $project->image = $request->file('image')->store('projects', 'public');
+            $project->image = cloudinary()->upload($request->file('image')->getRealPath())->getSecurePath();
         }
 
         $project->save();
-
         $project->skills()->sync($request->skill_ids);
 
         return redirect()->route('projects.index')->with('success', 'Project updated successfully.');
@@ -91,10 +78,7 @@ class ProjectController extends Controller
 
     public function destroy(Project $project)
     {
-        Storage::disk('public')->delete($project->image);
-
         $project->delete();
-
         return redirect()->route('projects.index')->with('success', 'Project deleted successfully.');
     }
 }
