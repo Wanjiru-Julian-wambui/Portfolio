@@ -6,6 +6,7 @@ use App\Http\Resources\SkillResource;
 use App\Models\Skill;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 
 class SkillController extends Controller
 {
@@ -28,7 +29,7 @@ class SkillController extends Controller
             'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg,webp|max:10240',
         ]);
 
-        $imagePath = cloudinary()->upload($request->file('image')->getRealPath())->getSecurePath();
+        $imagePath = Cloudinary::upload($request->file('image')->getRealPath())->getSecurePath();
 
         Skill::create([
             'name'  => $request->name,
@@ -58,7 +59,7 @@ class SkillController extends Controller
         $skill->name = $request->name;
 
         if ($request->hasFile('image')) {
-            $skill->image = cloudinary()->upload($request->file('image')->getRealPath())->getSecurePath();
+            $skill->image = Cloudinary::upload($request->file('image')->getRealPath())->getSecurePath();
         }
 
         $skill->save();

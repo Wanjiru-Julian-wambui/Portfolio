@@ -8,6 +8,7 @@ use App\Models\Project;
 use App\Models\Skill;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 
 class ProjectController extends Controller
 {
@@ -37,7 +38,7 @@ class ProjectController extends Controller
             'description' => 'nullable|string|max:1000',
         ]);
 
-        $imagePath = cloudinary()->upload($request->file('image')->getRealPath())->getSecurePath();
+        $imagePath = Cloudinary::upload($request->file('image')->getRealPath())->getSecurePath();
 
         $project = Project::create([
             'name'        => $request->name,
@@ -77,7 +78,7 @@ class ProjectController extends Controller
         $project->description = $request->description;
 
         if ($request->hasFile('image')) {
-            $project->image = cloudinary()->upload($request->file('image')->getRealPath())->getSecurePath();
+            $project->image = Cloudinary::upload($request->file('image')->getRealPath())->getSecurePath();
         }
 
         $project->save();
