@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Storage;
 
 class SkillResource extends JsonResource
 {
@@ -12,7 +13,7 @@ class SkillResource extends JsonResource
         return [
             'id'    => $this->id,
             'name'  => $this->name,
-            'image' => $this->image ? asset('storage/' . $this->image) : null,
+            'image' => $this->image ? Storage::url($this->image) : null,
         ];
     }
 }
