@@ -5,11 +5,31 @@ namespace App\Http\Controllers;
 use App\Http\Resources\SkillResource;
 use App\Models\Skill;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Inertia\Inertia;
-use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 
 class SkillController extends Controller
 {
+    private function uploadToCloudinary($file): string
+    {
+        $response = Http::asMultipart()->post(
+            'https://api.cloudinary.com/v1_1/' . env('CLOUDINARY_CLOUD_NAME') . '/image/upload',
+            [
+                [
+                    'name'     => 'file',
+                    'contents' => fopen($file->getRealPath(), 'r'),
+                    'filename' => $file->getClientOriginalName(),
+                ],
+                [
+                    'name'     => 'upload_preset',
+                    'contents' => env('CLOUDINARY_UPLOAD_PRESET'),
+                ],
+            ]
+        );
+
+        return $response->json()['secure_url'];
+    }
+
     public function index()
     {
         return Inertia::render('skills/Index', [
@@ -29,7 +49,7 @@ class SkillController extends Controller
             'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg,webp|max:10240',
         ]);
 
-        $imagePath = Cloudinary::upload($request->file('image')->getRealPath())->getSecurePath();
+        $imagePath = $this->uploadToCloudinary($request->file('image'));
 
         Skill::create([
             'name'  => $request->name,
@@ -39,15 +59,9 @@ class SkillController extends Controller
         return redirect()->route('skills.index')->with('success', 'Skill created successfully.');
     }
 
-    public function show(Skill $skill)
-    {
-        //
-    }
+    public function show(Skill $skill) {}
 
-    public function edit(Skill $skill)
-    {
-        //
-    }
+    public function edit(Skill $skill) {}
 
     public function update(Request $request, Skill $skill)
     {
@@ -59,7 +73,7 @@ class SkillController extends Controller
         $skill->name = $request->name;
 
         if ($request->hasFile('image')) {
-            $skill->image = Cloudinary::upload($request->file('image')->getRealPath())->getSecurePath();
+            $skill->image = $this->uploadToCloudinary($request->file('image'));
         }
 
         $skill->save();
