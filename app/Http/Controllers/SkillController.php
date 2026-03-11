@@ -6,6 +6,7 @@ use App\Http\Resources\SkillResource;
 use App\Models\Skill;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class SkillController extends Controller
@@ -26,6 +27,8 @@ class SkillController extends Controller
                 ],
             ]
         );
+
+        Log::error('Cloudinary response: ' . json_encode($response->json()));
 
         return $response->json()['secure_url'];
     }
