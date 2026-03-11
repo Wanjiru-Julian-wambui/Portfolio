@@ -38,6 +38,16 @@ class SkillController extends Controller
         return redirect()->route('skills.index')->with('success', 'Skill created successfully.');
     }
 
+    public function show(Skill $skill)
+    {
+        //
+    }
+
+    public function edit(Skill $skill)
+    {
+        //
+    }
+
     public function update(Request $request, Skill $skill)
     {
         $request->validate([

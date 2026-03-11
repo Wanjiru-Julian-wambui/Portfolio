@@ -51,6 +51,16 @@ class ProjectController extends Controller
         return redirect()->route('projects.index')->with('success', 'Project created successfully.');
     }
 
+    public function show(Project $project)
+    {
+        //
+    }
+
+    public function edit(Project $project)
+    {
+        //
+    }
+
     public function update(Request $request, Project $project)
     {
         $request->validate([
