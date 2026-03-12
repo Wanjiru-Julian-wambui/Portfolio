@@ -13,8 +13,14 @@ class SkillController extends Controller
 {
     private function uploadToCloudinary($file): string
     {
+        $cloudName = env('CLOUDINARY_CLOUD_NAME');
+        $preset = env('CLOUDINARY_UPLOAD_PRESET');
+
+        Log::error('Cloud name: ' . $cloudName);
+        Log::error('Preset: ' . $preset);
+
         $response = Http::asMultipart()->post(
-            'https://api.cloudinary.com/v1_1/' . env('CLOUDINARY_CLOUD_NAME') . '/image/upload',
+            'https://api.cloudinary.com/v1_1/' . $cloudName . '/image/upload',
             [
                 [
                     'name'     => 'file',
@@ -23,11 +29,12 @@ class SkillController extends Controller
                 ],
                 [
                     'name'     => 'upload_preset',
-                    'contents' => env('CLOUDINARY_UPLOAD_PRESET'),
+                    'contents' => $preset,
                 ],
             ]
         );
 
+        Log::error('Cloudinary status: ' . $response->status());
         Log::error('Cloudinary response: ' . json_encode($response->json()));
 
         return $response->json()['secure_url'];
