@@ -12,7 +12,7 @@ class SkillResource extends JsonResource
         return [
             'id'    => $this->id,
             'name'  => $this->name,
-            'image' => $this->image,
+            'image' => 'https://ucarecdn.com/' . $this->image . '/',
         ];
     }
 }
