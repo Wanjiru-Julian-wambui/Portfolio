@@ -14,8 +14,11 @@ class ProjectController extends Controller
 {
     private function uploadToCloudinary($file): string
     {
+        $cloudName = config('services.cloudinary.cloud_name');
+        $preset    = config('services.cloudinary.upload_preset');
+
         $response = Http::asMultipart()->post(
-            'https://api.cloudinary.com/v1_1/' . env('CLOUDINARY_CLOUD_NAME') . '/image/upload',
+            'https://api.cloudinary.com/v1_1/' . $cloudName . '/image/upload',
             [
                 [
                     'name'     => 'file',
@@ -24,7 +27,7 @@ class ProjectController extends Controller
                 ],
                 [
                     'name'     => 'upload_preset',
-                    'contents' => env('CLOUDINARY_UPLOAD_PRESET'),
+                    'contents' => $preset,
                 ],
             ]
         );
@@ -72,9 +75,15 @@ class ProjectController extends Controller
         return redirect()->route('projects.index')->with('success', 'Project created successfully.');
     }
 
-    public function show(Project $project) {}
+    public function show(Project $project)
+    {
+        //
+    }
 
-    public function edit(Project $project) {}
+    public function edit(Project $project)
+    {
+        //
+    }
 
     public function update(Request $request, Project $project)
     {

@@ -6,18 +6,14 @@ use App\Http\Resources\SkillResource;
 use App\Models\Skill;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class SkillController extends Controller
 {
     private function uploadToCloudinary($file): string
     {
-        $cloudName = env('CLOUDINARY_CLOUD_NAME');
-        $preset = env('CLOUDINARY_UPLOAD_PRESET');
-
-        Log::error('Cloud name: ' . $cloudName);
-        Log::error('Preset: ' . $preset);
+        $cloudName = config('services.cloudinary.cloud_name');
+        $preset    = config('services.cloudinary.upload_preset');
 
         $response = Http::asMultipart()->post(
             'https://api.cloudinary.com/v1_1/' . $cloudName . '/image/upload',
@@ -33,9 +29,6 @@ class SkillController extends Controller
                 ],
             ]
         );
-
-        Log::error('Cloudinary status: ' . $response->status());
-        Log::error('Cloudinary response: ' . json_encode($response->json()));
 
         return $response->json()['secure_url'];
     }
