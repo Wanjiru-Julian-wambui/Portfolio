@@ -21,6 +21,14 @@ class SkillController extends Controller
             ]
         );
 
+        if ($response->failed() || empty($response->json()['file'])) {
+            logger()->error('Uploadcare upload failed', [
+                'status' => $response->status(),
+                'body'   => $response->body(),
+            ]);
+            throw new \RuntimeException('Image upload failed. Please try again.');
+        }
+
         $fileId = $response->json()['file'];
         return 'https://ucarecdn.com/' . $fileId . '/';
     }
