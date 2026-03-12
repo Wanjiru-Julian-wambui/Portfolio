@@ -35,9 +35,9 @@ return [
         ],
     ],
 
-    'cloudinary' => [
-        'cloud_name' => env('CLOUDINARY_CLOUD_NAME'),
-        'upload_preset' => env('CLOUDINARY_UPLOAD_PRESET'),
+    'uploadcare' => [
+        'public_key' => env('UPLOADCARE_PUBLIC_KEY'),
+        'secret_key' => env('UPLOADCARE_SECRET_KEY'),
     ],
 
 ];

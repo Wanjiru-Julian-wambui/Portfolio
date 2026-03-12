@@ -10,27 +10,28 @@ use Inertia\Inertia;
 
 class SkillController extends Controller
 {
-    private function uploadToCloudinary($file): string
+    private function uploadToUploadcare($file): string
     {
-        $cloudName = config('services.cloudinary.cloud_name');
-        $preset    = config('services.cloudinary.upload_preset');
-
         $response = Http::asMultipart()->post(
-            'https://api.cloudinary.com/v1_1/' . $cloudName . '/image/upload',
+            'https://upload.uploadcare.com/base/',
             [
-                [
-                    'name'     => 'file',
-                    'contents' => fopen($file->getRealPath(), 'r'),
-                    'filename' => $file->getClientOriginalName(),
-                ],
-                [
-                    'name'     => 'upload_preset',
-                    'contents' => $preset,
-                ],
+                ['name' => 'UPLOADCARE_PUB_KEY',  'contents' => config('services.uploadcare.public_key')],
+                ['name' => 'UPLOADCARE_STORE',     'contents' => '1'],
+                ['name' => 'file',                 'contents' => fopen($file->getRealPath(), 'r'), 'filename' => $file->getClientOriginalName()],
             ]
         );
 
-        return $response->json()['secure_url'];
+        $fileId = $response->json()['file'];
+        return 'https://ucarecdn.com/' . $fileId . '/';
+    }
+
+    private function deleteFromUploadcare(string $fileUrl): void
+    {
+        $fileId = basename(rtrim($fileUrl, '/'));
+
+        Http::withHeaders([
+            'Authorization' => 'Uploadcare.Simple ' . config('services.uploadcare.public_key') . ':' . config('services.uploadcare.secret_key'),
+        ])->delete('https://api.uploadcare.com/files/' . $fileId . '/');
     }
 
     public function index()
@@ -52,7 +53,7 @@ class SkillController extends Controller
             'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg,webp|max:10240',
         ]);
 
-        $imagePath = $this->uploadToCloudinary($request->file('image'));
+        $imagePath = $this->uploadToUploadcare($request->file('image'));
 
         Skill::create([
             'name'  => $request->name,
@@ -82,7 +83,8 @@ class SkillController extends Controller
         $skill->name = $request->name;
 
         if ($request->hasFile('image')) {
-            $skill->image = $this->uploadToCloudinary($request->file('image'));
+            $this->deleteFromUploadcare($skill->image);
+            $skill->image = $this->uploadToUploadcare($request->file('image'));
         }
 
         $skill->save();
@@ -92,6 +94,7 @@ class SkillController extends Controller
 
     public function destroy(Skill $skill)
     {
+        $this->deleteFromUploadcare($skill->image);
         $skill->delete();
         return redirect()->route('skills.index')->with('success', 'Skill deleted successfully.');
     }
