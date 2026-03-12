@@ -29,15 +29,12 @@ class SkillController extends Controller
             throw new \RuntimeException('Image upload failed. Please try again.');
         }
 
-        $fileId = $response->json()['file'];
-        $filename = $file->getClientOriginalName();
-        return 'https://ucarecdn.com/' . $fileId . '/' . $filename;
+        // Store only the UUID
+        return $response->json()['file'];
     }
 
-    private function deleteFromUploadcare(string $fileUrl): void
+    private function deleteFromUploadcare(string $fileId): void
     {
-        $fileId = basename(rtrim($fileUrl, '/'));
-
         Http::withHeaders([
             'Authorization' => 'Uploadcare.Simple ' . config('services.uploadcare.public_key') . ':' . config('services.uploadcare.secret_key'),
         ])->delete('https://api.uploadcare.com/files/' . $fileId . '/');
@@ -62,11 +59,9 @@ class SkillController extends Controller
             'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg,webp|max:10240',
         ]);
 
-        $imagePath = $this->uploadToUploadcare($request->file('image'));
-
         Skill::create([
             'name'  => $request->name,
-            'image' => $imagePath,
+            'image' => $this->uploadToUploadcare($request->file('image')),
         ]);
 
         return redirect()->route('skills.index')->with('success', 'Skill created successfully.');
