@@ -30,7 +30,8 @@ class SkillController extends Controller
         }
 
         $fileId = $response->json()['file'];
-        return 'https://ucarecdn.com/' . $fileId . '/';
+        $filename = $file->getClientOriginalName();
+        return 'https://ucarecdn.com/' . $fileId . '/' . $filename;
     }
 
     private function deleteFromUploadcare(string $fileUrl): void
