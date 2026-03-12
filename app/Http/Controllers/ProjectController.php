@@ -72,7 +72,7 @@ class ProjectController extends Controller
             'skill_ids.*' => 'exists:skills,id',
             'image'       => 'required|image|mimes:jpeg,png,jpg,gif,svg,webp|max:10240',
             'project_url' => 'required|url|max:255',
-            'description' => 'nullable|string|max:1000',
+            'description' => 'nullable|string|max:5000',
         ]);
 
         // Stores only the UUID string in the 'image' column
